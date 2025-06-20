@@ -7,6 +7,9 @@ import 'package:weatherandnewsaggregatorapp/presentation/controllers/weather_con
 import 'package:weatherandnewsaggregatorapp/presentation/pages/home_screen/components/newsdetails_screen.dart';
 import 'package:weatherandnewsaggregatorapp/presentation/pages/home_screen/components/weatherdetail_screen.dart';
 import 'package:weatherandnewsaggregatorapp/presentation/controllers/news_controller.dart';
+import 'package:weatherandnewsaggregatorapp/presentation/controllers/settings_controller.dart';
+
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final WeatherController weatherController = Get.put(WeatherController());
     final NewsController newsController = Get.put(NewsController());
+    final SettingsController settingsController = Get.put(SettingsController());
 
     return Scaffold(
       backgroundColor: background,
@@ -31,44 +35,41 @@ class HomeScreen extends StatelessWidget {
         actions: [
           Obx(
             () => IconButton(
-              icon:
-                  weatherController.isLoading.value
-                      ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: textPrimary,
-                        ),
-                      )
-                      : Icon(Icons.my_location, color: textPrimary),
-              onPressed:
-                  weatherController.isLoading.value
-                      ? null
-                      : () {
-                        Get.dialog(
-                          AlertDialog(
-                            title: Text('Get Current Location'),
-                            content: Text(
-                              'Do you want to get weather for your current location?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Get.back(),
-                                child: Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Get.back();
-                                  weatherController
-                                      .fetchWeatherByCurrentLocation();
-                                },
-                                child: Text('Yes'),
-                              ),
-                            ],
+              icon: weatherController.isLoading.value
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: textPrimary,
+                      ),
+                    )
+                  : Icon(Icons.my_location, color: textPrimary),
+              onPressed: weatherController.isLoading.value
+                  ? null
+                  : () {
+                      Get.dialog(
+                        AlertDialog(
+                          title: Text('Get Current Location'),
+                          content: Text(
+                            'Do you want to get weather for your current location?',
                           ),
-                        );
-                      },
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(),
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Get.back();
+                                weatherController.fetchWeatherByCurrentLocation();
+                              },
+                              child: Text('Yes'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
             ),
           ),
         ],
@@ -88,7 +89,11 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Weather Section
-              _buildWeatherSection(weatherController, context),
+              _buildWeatherSection(
+                weatherController,
+                settingsController,
+                context,
+              ),
 
               const SizedBox(height: 20),
 
@@ -97,8 +102,13 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
+              // Weather-Based News Filter Info Section (NEW)
+              _buildWeatherNewsFilterInfo(newsController),
+
+              const SizedBox(height: 10),
+
               // News Section
-              _buildNewsSection(newsController),
+              _buildNewsSection(newsController, settingsController),
             ],
           ),
         ),
@@ -108,6 +118,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildWeatherSection(
     WeatherController weatherController,
+    SettingsController settingsController,
     BuildContext context,
   ) {
     return Obx(() {
@@ -162,11 +173,15 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 8),
-                AppText(
-                  weatherController.getTemperatureString(),
-                  size: 50,
-                  weight: FontWeight.w400,
-                  color: textPrimary,
+                Obx(
+                  () => AppText(
+                    settingsController.convertTemperature(
+                      weatherController.currentTemperature.value,
+                    ),
+                    size: 50,
+                    weight: FontWeight.w400,
+                    color: textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -237,17 +252,83 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsSection(NewsController newsController) {
+  // NEW: Weather-Based News Filter Information Widget
+  Widget _buildWeatherNewsFilterInfo(NewsController newsController) {
+    return Obx(() {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              sunYellow.withOpacity(0.1),
+              sunYellow.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: sunYellow.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  newsController.getWeatherMoodIcon(),
+                  style: TextStyle(fontSize: 20),
+                ),
+                const SizedBox(width: 8),
+                AppText(
+                  'Weather-Based News Filter',
+                  size: 16,
+                  weight: FontWeight.w600,
+                  color: textPrimary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            AppText(
+              newsController.getWeatherMoodDescription(),
+              size: 14,
+              color: textSecondary,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: sunYellow.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: AppText(
+                'Category: ${newsController.getCurrentWeatherCategory()}',
+                size: 12,
+                weight: FontWeight.w600,
+                color: sunYellow,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildNewsSection(
+    NewsController newsController,
+    SettingsController settingsController,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with search
+        // Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               AppText(
-                'Latest News',
+                'News Headlines',
                 color: textPrimary,
                 size: 18,
                 weight: FontWeight.w700,
@@ -309,18 +390,11 @@ class HomeScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Featured News (First Article)
-              if (articles.isNotEmpty) _buildFeaturedNews(articles.first),
-
-              const SizedBox(height: 16),
-
-              // News List
               ListView.builder(
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemCount: articles.length > 1 ? articles.length - 1 : 0,
-                itemBuilder:
-                    (context, index) => _buildNewsItem(articles[index + 1]),
+                itemBuilder: (context, index) => _buildNewsItem(articles[index + 1]),
               ),
             ],
           );
@@ -329,11 +403,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturedNews(Article article) {
+  Widget _buildNewsItem(Article article) {
     return GestureDetector(
       onTap: () => Get.to(() => NewsDetailScreen(article: article)),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
           color: colorWhite,
           borderRadius: BorderRadius.circular(12),
@@ -356,17 +430,17 @@ class HomeScreen extends StatelessWidget {
                 Image.network(
                   article.urlToImage!,
                   width: double.infinity,
-                  height: 200,
+                  height: 150,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       width: double.infinity,
-                      height: 200,
+                      height: 150,
                       color: Colors.grey[200],
                       child: const Icon(
                         Icons.image_not_supported,
                         color: Colors.grey,
-                        size: 50,
+                        size: 40,
                       ),
                     );
                   },
@@ -374,12 +448,12 @@ class HomeScreen extends StatelessWidget {
               else
                 Container(
                   width: double.infinity,
-                  height: 200,
+                  height: 150,
                   color: Colors.grey[200],
                   child: const Icon(
                     Icons.article,
                     color: Colors.grey,
-                    size: 50,
+                    size: 40,
                   ),
                 ),
 
@@ -415,20 +489,19 @@ class HomeScreen extends StatelessWidget {
                     AppText(
                       article.title ?? 'No Title',
                       color: textPrimary,
-                      size: 18,
+                      size: 16,
                       weight: FontWeight.w700,
-                      maxLines: 3,
+                      maxLines: 2,
                     ),
                     const SizedBox(height: 8),
 
                     // Description
-                    if (article.description != null &&
-                        article.description!.isNotEmpty)
+                    if (article.description != null && article.description!.isNotEmpty)
                       AppText(
                         article.description!,
                         size: 14,
                         color: textSecondary,
-                        maxLines: 3,
+                        maxLines: 2,
                       ),
                   ],
                 ),
@@ -440,107 +513,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsItem(Article article) {
-    return GestureDetector(
-      onTap: () => Get.to(() => NewsDetailScreen(article: article)),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Card(
-          elevation: 2,
-          color: colorWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey[200],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child:
-                        article.urlToImage != null &&
-                                article.urlToImage!.isNotEmpty
-                            ? Image.network(
-                              article.urlToImage!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.grey,
-                                );
-                              },
-                            )
-                            : const Icon(Icons.article, color: Colors.grey),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Source and Date
-                      Row(
-                        children: [
-                          if (article.source?.name != null)
-                            Expanded(
-                              child: AppText(
-                                article.source!.name!,
-                                size: 11,
-                                color: sunYellow,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                          if (article.publishedAt != null)
-                            AppText(
-                              _formatDate(article.publishedAt!),
-                              size: 11,
-                              color: textSecondary,
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Title
-                      AppText(
-                        article.title ?? 'No Title',
-                        size: 15,
-                        weight: FontWeight.w600,
-                        color: textPrimary,
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Description
-                      if (article.description != null &&
-                          article.description!.isNotEmpty)
-                        AppText(
-                          article.description!,
-                          size: 13,
-                          color: textSecondary,
-                          maxLines: 2,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   String _formatDate(String dateString) {
     try {
@@ -560,35 +532,5 @@ class HomeScreen extends StatelessWidget {
     } catch (e) {
       return 'Recently';
     }
-  }
-
-  void _showNewsSearchDialog(NewsController newsController) {
-    final TextEditingController searchController = TextEditingController();
-
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Search News'),
-        content: TextField(
-          controller: searchController,
-          decoration: const InputDecoration(
-            hintText: 'Enter search term...',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              if (searchController.text.trim().isNotEmpty) {
-                Get.back();
-                newsController.searchNews(searchController.text.trim());
-              }
-            },
-            child: const Text('Search'),
-          ),
-        ],
-      ),
-    );
   }
 }

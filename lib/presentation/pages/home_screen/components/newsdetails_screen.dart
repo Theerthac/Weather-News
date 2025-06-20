@@ -1,4 +1,4 @@
-// presentation/pages/news_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:weatherandnewsaggregatorapp/data/colors/colors.dart';
 import 'package:weatherandnewsaggregatorapp/data/components/custom_apptext.dart';
@@ -25,7 +25,7 @@ class NewsDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero Image
+ 
             if (article.urlToImage != null && article.urlToImage!.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -76,13 +76,13 @@ class NewsDetailScreen extends StatelessWidget {
                 ),
               ),
 
-            // Article Content
+    
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Source and Date
+         
                   Row(
                     children: [
                       if (article.source?.name != null)
@@ -136,7 +136,7 @@ class NewsDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Content
+     
                   if (article.content != null && article.content!.isNotEmpty)
                     AppText(
                       article.content!,
@@ -175,42 +175,4 @@ class NewsDetailScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _launchUrl(BuildContext context, String url) async {
-    // Simple fallback implementation without url_launcher
-    // You can implement your own URL opening logic here
-    // For now, we'll show a dialog with the URL
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Open Article'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Would you like to open this article in your browser?',
-              ),
-              const SizedBox(height: 8),
-              Text(url, style: TextStyle(color: Colors.blue, fontSize: 12)),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Here you could implement custom URL opening logic
-                // or copy URL to clipboard
-              },
-              child: const Text('Open'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
